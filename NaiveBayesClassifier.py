@@ -2,6 +2,7 @@
 """
 @author: Andrew Jumanca
 """
+
 import pandas as pd
 import numpy as np
 df = pd.read_csv('data/lingspam-emails.csv.bz2', sep='\t')
@@ -10,6 +11,13 @@ df = df.dropna(subset=['spam', 'message'])
 from sklearn.feature_extraction.text import CountVectorizer
 vectorizer = CountVectorizer(binary=True)
 # define vectorizer
+
+"""
+Creation of a DTM (Document Term Matrix) where the columns
+denote a given email, the rows denote a specific word,
+and the number at index (column, row) denotes the presence
+of that word in that email.
+"""
 
 X = vectorizer.fit_transform(df.message).toarray()
 y = df['spam'].to_numpy()*1
@@ -22,7 +30,9 @@ vocabulary = vectorizer.get_feature_names()
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(np.matrix(X), y, test_size=0.2, random_state=25)
 
-# Variable Definition:
+"""
+# Variable Definition for Bayes' Thereom:
+===========================================
 # Pr_S1 : Pr(category = S)  
 # Pr_S0 : Pr(category = NS)  
 # Pr_W1 : Pr(w = 1)  
@@ -30,7 +40,9 @@ X_train, X_test, y_train, y_test = train_test_split(np.matrix(X), y, test_size=0
 # Pr_W1_S1 : Pr(w = 1 | category = S)  
 # Pr_W1_S0 : Pr(w = 1 | category = NS)  
 # Pr_W0_S1 : Pr(w = 0 | category = S)  
-# Pr_W0_S0 : Pr(w = 0 | category = NS)  
+# Pr_W0_S0 : Pr(w = 0 | category = NS) 
+"""
+ 
 
 # ------------------------------------
 # ln_Pr_W1 : logPr(W = 1)  
@@ -66,6 +78,13 @@ ln_Pr_W1_S0[ln_Pr_W1_S0 == float('-inf')] = -99999999999
 lnL_S1_W = ln_Pr_S1 + ln_Pr_W1_S1 @ X_test.T
 lnL_S0_W = ln_Pr_S0 + ln_Pr_W1_S0 @ X_test.T
 
+
+"""
+Here we assign the value of the index for the DTM
+depending on whether it represents (1) the presence
+of such a word in a spam email, or (0) the lack of 
+such a word in a spam email.
+"""
 y_pred = []
 for i in range(len(X_test)):
     if lnL_S1_W[0, i] > lnL_S0_W[0, i]:
@@ -137,6 +156,14 @@ def predictCategory(logLiks):
     print()
     print("----------------------------------------------------------------------------")
     print()
+    
+    
+   
+"""
+This function predicts the result on the test data
+based on the probabilistic values dervied from the 
+train DTM.
+"""
     
 def predictCategoryAlpha(logLiks):
     lnL_S0_W, lnL_S1_W, alpha = logLiks
@@ -212,8 +239,11 @@ print('\n'.join(map(str, top10Spam[0])))
 print()
 
 
-# K-fold Cross Validation:
-    
+"""
+K-fold Cross Validation
+in an attempt to find the best model alpha smoothing value.
+"""
+
 def kFoldCV(k, alpha):
     # (a) randomizing
     data = df.sample(frac=1)
